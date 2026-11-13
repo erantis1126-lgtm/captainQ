@@ -80,6 +80,7 @@
   .status{margin:12px 0 0;font-size:14px;color:var(--muted);display:flex;gap:8px;align-items:flex-start}
   .status:empty{display:none}
   .status.err{color:#b42318}
+  .retry{margin-top:8px}
   .status.busy::before{
     content:"";flex:none;width:14px;height:14px;margin-top:3px;border-radius:50%;
     border:2px solid #cfc6b1;border-top-color:var(--green);animation:spin .8s linear infinite;
@@ -212,6 +213,7 @@
         <span class="lbl">반경</span>
       </div>
       <p class="status" id="status" aria-live="polite"></p>
+      <button class="chip retry" id="retryBtn" type="button" hidden>다시 시도</button>
     </section>
 
     <div class="map" id="map" hidden></div>
@@ -286,6 +288,7 @@
 
   const OVERPASS = [
     'https://overpass-api.de/api/interpreter',
+    'https://lz4.overpass-api.de/api/interpreter',
     'https://overpass.kumi.systems/api/interpreter',
     'https://overpass.private.coffee/api/interpreter',
     'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
@@ -388,8 +391,12 @@
     if (isIOS) return `itms-apps://search.itunes.apple.com/WebObjects/MZSearch.woa/wa/search?media=software&term=${e}`;
     return `https://play.google.com/store/search?q=${e}&c=apps`;
   }
-  const kakaoRoute = s => `https://map.kakao.com/link/to/${encodeURIComponent(s.name.replace(/,/g,' '))},${s.lat},${s.lon}`;
-  const naverSearch = s => `https://map.naver.com/p/search/${encodeURIComponent(s.name)}`;
+  const kname = s => encodeURIComponent(s.name.replace(/,/g, ' '));
+  const kakaoRoute = s => `https://map.kakao.com/link/to/${kname(s)},${s.lat},${s.lon}`;
+  // 지점명이 있으면 카카오맵 검색(전화번호까지 나옴), 없으면 정확한 위치에 핀
+  const placeInfo = s => s.noBranch
+    ? `https://map.kakao.com/link/map/${kname(s)},${s.lat},${s.lon}`
+    : `https://map.kakao.com/link/search/${encodeURIComponent(s.name)}`;
   const telHref = p => 'tel:' + p.split(/[;,]/)[0].replace(/[^\d+]/g,'');
 
   // ---------- network ----------
@@ -403,28 +410,52 @@
     } finally { clearTimeout(timer); }
   }
 
+  // 위치 조건을 먼저 거는 가벼운 쿼리. 체인 판별은 받은 뒤에 한다.
   function buildQuery(c, r){
-    const re = 'CU|씨유|GS ?25|지에스 ?25|세븐 ?일레븐|eleven|이마트|mart|롯데 ?마트|롯데 ?슈퍼|lotte';
-    const a = `(around:${r},${c.lat.toFixed(6)},${c.lon.toFixed(6)})`;
-    return `[out:json][timeout:40];(` +
-      `nwr["shop"]["name"~"${re}",i]${a};` +
-      `nwr["shop"]["brand"~"${re}",i]${a};` +
-      `);out center tags qt;`;
+    return `[out:json][timeout:50];` +
+      `nwr(around:${r},${c.lat.toFixed(5)},${c.lon.toFixed(5)})["shop"~"^(convenience|supermarket|department_store|wholesale|mall)$"];` +
+      `out center tags;`;
   }
 
-  async function overpass(q){
-    let last;
-    for (const url of OVERPASS){
-      try{
-        return await fetchJSON(url, {
-          method:'POST',
+  // 공개 Overpass 서버는 자주 붐빈다. 한 곳에 보내고, 실패하거나 6초 안에 답이 없으면
+  // 다음 서버에도 보내서 먼저 온 답을 쓴다(나머지는 취소).
+  function overpass(q, onSlow){
+    return new Promise((resolve, reject) => {
+      let next = 0, pending = 0, done = false, lastErr, hedge, slowTimer;
+      const ctrls = [];
+      const finish = () => { done = true; clearTimeout(hedge); clearTimeout(cap); clearTimeout(slowTimer); ctrls.forEach(c => c.abort()); };
+      const cap = setTimeout(() => { if (!done){ finish(); reject(lastErr || new Error('timeout')); } }, 70000);
+      slowTimer = setTimeout(() => { if (!done && onSlow) onSlow(); }, 7000);
+      const launch = () => {
+        if (done || next >= OVERPASS.length) return;
+        const url = OVERPASS[next++];
+        const ctrl = new AbortController(); ctrls.push(ctrl); pending++;
+        clearTimeout(hedge); hedge = setTimeout(launch, 6000);
+        fetch(url, {
+          method:'POST', signal:ctrl.signal,
           headers:{ 'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8' },
           body:'data=' + encodeURIComponent(q),
-        }, 45000);
-      }catch(e){ last = e; }
-    }
-    throw last || new Error('overpass failed');
+        }).then(async res => {
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const j = await res.json();
+          if (!Array.isArray(j.elements)) throw new Error('bad response');
+          if (!done){ finish(); resolve(j.elements); }
+        }).catch(e => {
+          if (done) return;
+          lastErr = e; pending--;
+          if (next < OVERPASS.length) launch();
+          else if (pending === 0){ finish(); reject(e); }
+        });
+      };
+      launch();
+    });
   }
+
+  // 같은 중심에서 더 넓게 받아 둔 결과가 있으면 다시 받지 않는다.
+  const cache = { key:'', r:0, els:[] };
+  const centerKey = c => `${c.lat.toFixed(4)},${c.lon.toFixed(4)}`;
+
+  const BARE = /^(cu|씨유|gs25|지에스25|7-?eleven|세븐일레븐|이마트24|emart24|이마트|e-?mart|롯데마트|롯데슈퍼|lottemart|lottesuper)$/i;
 
   function normalize(elements){
     const c = state.center, out = [];
@@ -436,9 +467,11 @@
       if (lat == null || lon == null) continue;
       const d = haversine(c, {lat, lon});
       if (d > state.radius * 1.03) continue;
+      const raw = (t['name:ko'] || t.name || '').trim();
+      const noBranch = !raw || BARE.test(raw.replace(/[\s()]/g, ''));
       out.push({
-        id: el.type[0] + el.id, b, lat, lon, d,
-        name: (t['name:ko'] || t.name || b.label).trim(),
+        id: el.type[0] + el.id, b, lat, lon, d, noBranch,
+        name: noBranch ? b.label : raw,
         phone: t.phone || t['contact:phone'] || '',
         addr: addrOf(t),
       });
@@ -456,11 +489,23 @@
   async function search(){
     if (!state.center) return;
     const my = ++state.token;
-    setStatus(`${state.label} 반경 ${fmtR(state.radius)} 안의 판매 매장을 찾는 중…`, 'busy');
+    const key = centerKey(state.center);
+    $('#retryBtn').hidden = true;
     try{
-      const data = await overpass(buildQuery(state.center, state.radius));
+      let els;
+      if (cache.key === key && cache.r >= state.radius){
+        els = cache.els;
+      } else {
+        setStatus(`${state.label} 반경 ${fmtR(state.radius)} 안의 판매 매장을 찾는 중…`, 'busy');
+        const r = state.radius;
+        const raw = await overpass(buildQuery(state.center, r), () => {
+          if (my === state.token) setStatus('지도 서버가 붐벼서 조금 오래 걸리고 있어요… (최대 1분)', 'busy');
+        });
+        els = raw.filter(el => detectBrand(el.tags || {}));
+        if (cache.key !== key || r > cache.r){ cache.key = key; cache.r = r; cache.els = els; }
+      }
       if (my !== state.token) return;
-      state.stores = normalize(data.elements);
+      state.stores = normalize(els);
       state.limit = PAGE;
       if (state.filter !== 'all' && !state.stores.some(s => s.b.id === state.filter)) state.filter = 'all';
       setStatus('');
@@ -469,7 +514,8 @@
       render();
     }catch(e){
       if (my !== state.token) return;
-      setStatus('매장 정보를 불러오지 못했어요. 네트워크를 확인하고 잠시 후 다시 시도해 주세요.', 'err');
+      setStatus('지도 서버가 지금 너무 붐벼서 매장을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.', 'err');
+      $('#retryBtn').hidden = false;
     }
   }
 
@@ -587,7 +633,7 @@
     const b = s.b;
     const third = s.phone
       ? `<a class="act" href="${esc(telHref(s.phone))}">${ICON.phone}전화</a>`
-      : `<a class="act" href="${esc(naverSearch(s))}" target="_blank" rel="noopener">${ICON.info}매장정보</a>`;
+      : `<a class="act" href="${esc(placeInfo(s))}" target="_blank" rel="noopener">${ICON.info}매장정보</a>`;
     return `<li class="store${m?.s === 'no' ? ' is-no' : ''}" id="s-${s.id}" data-id="${s.id}">
       <div class="top">
         <span class="badge" style="--c:${b.c};--fg:${b.fg}">${b.label}</span>
@@ -595,7 +641,7 @@
         <span class="dist"><b>${fmtDist(s.d)}</b>${s.d < 2500 ? ` · 도보 약 ${walkMin(s.d)}분` : ''}</span>
       </div>
       <h3 class="sname">${esc(s.name)}</h3>
-      ${s.addr ? `<p class="addrline">${esc(s.addr)}</p>` : ''}
+      ${s.addr ? `<p class="addrline">${esc(s.addr)}</p>` : (s.noBranch ? `<p class="addrline">지점명 미등록 · 매장정보에서 위치 확인</p>` : '')}
       ${memoLine(m)}
       <div class="acts">
         <button class="act main" type="button" data-act="check">${ICON.box}재고 확인</button>
@@ -698,7 +744,7 @@
         </ol>
         <div class="btns">
           <a class="btn primary" href="${esc(storeHref)}"${ext}>${b.appShow} 열기 / 설치</a>
-          <a class="btn ghost" href="${esc(naverSearch(s))}" target="_blank" rel="noopener">매장 전화번호 보기 (네이버 지도)</a>
+          <a class="btn ghost" href="${esc(placeInfo(s))}" target="_blank" rel="noopener">매장 위치·전화번호 보기 (카카오맵)</a>
           <button class="btn ghost" type="button" data-close>닫기</button>
         </div>`);
     } else {
@@ -711,7 +757,7 @@
         </ol>
         <div class="btns">
           ${s.phone ? `<a class="btn primary" href="${esc(telHref(s.phone))}">${ICON.phone}${esc(s.phone)} 전화</a>` : ''}
-          <a class="btn ${s.phone ? 'ghost' : 'primary'}" href="${esc(naverSearch(s))}" target="_blank" rel="noopener">네이버 지도에서 매장 정보·전화번호</a>
+          <a class="btn ${s.phone ? 'ghost' : 'primary'}" href="${esc(placeInfo(s))}" target="_blank" rel="noopener">카카오맵에서 매장 정보·전화번호</a>
           <button class="btn ghost" type="button" data-close>닫기</button>
         </div>`);
     }
@@ -720,6 +766,7 @@
   // ---------- events ----------
   $('#tipCopy').addEventListener('click', copyWord);
   $('#btnLocate').addEventListener('click', locate);
+  $('#retryBtn').addEventListener('click', () => search());
   $('#addrForm').addEventListener('submit', e => {
     e.preventDefault();
     const q = $('#addrInput').value.trim();
