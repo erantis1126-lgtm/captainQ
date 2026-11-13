@@ -6,6 +6,8 @@ on:
     paths:
       - 'index.html'
       - 'privacy.html'
+      - 'memory.js'
+      - 'games.js'
       - 'assets/**'
       - 'capacitor.config.json'
       - 'package.json'
@@ -58,5 +60,5 @@ jobs:
           gh release delete test-build --yes --cleanup-tag || true
           gh release create test-build soldout-radar-test.apk \
             --prerelease --target "${{ github.sha }}" \
-            --title "품절템 레이더 테스트 앱 (최신)" \
+            --title "캪틴큐 레이더 테스트 앱 (최신)" \
             --notes "main 브랜치 최신 코드로 자동 빌드한 테스트용 APK예요. 스토어 출시용이 아니에요. 새 버전을 설치할 때는 이전 테스트 앱을 먼저 지워 주세요."

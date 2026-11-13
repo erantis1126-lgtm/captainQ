@@ -1,6 +1,6 @@
 {
   "appId": "io.github.erantis1126.soldoutradar",
-  "appName": "품절템 레이더",
+  "appName": "캪틴큐 레이더",
   "webDir": "www",
   "server": {
     "androidScheme": "https"

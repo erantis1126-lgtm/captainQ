@@ -1,7 +1,7 @@
 {
   "name": "soldout-radar",
   "version": "1.0.0",
-  "description": "품절템 레이더 - 내 주변 품절템 판매 매장 찾기",
+  "description": "캪틴큐 레이더 - 판매 매장 찾기, 기억삭제 측정기, 술게임",
   "private": true,
   "scripts": {
     "build:web": "node scripts/build-web.mjs",

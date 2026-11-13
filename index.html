@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0c3a2c">
-<meta name="description" content="캪틴큐 같은 품절 대란템, 내 주변 어느 편의점·마트에서 파는지 거리순으로 찾고 편의점 앱 재고 조회로 바로 연결해요.">
-<title>품절템 레이더 — 내 주변 판매 매장 찾기</title>
+<meta name="description" content="캪틴큐 파는 곳을 내 주변에서 거리순으로 찾고, 다음날 기억삭제율도 측정하고, 술자리 게임까지.">
+<title>캪틴큐 레이더</title>
 <link rel="icon" type="image/png" href="assets/icon-512.png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
@@ -25,7 +25,7 @@
     font-family:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;
     background:var(--cream); color:var(--ink); line-height:1.45;
     -webkit-font-smoothing:antialiased; -webkit-tap-highlight-color:transparent;
-    padding-bottom:calc(20px + var(--sb));
+    padding-bottom:calc(84px + var(--sb));
   }
   .wrap{max-width:520px;margin:0 auto}
   button{font:inherit}
@@ -150,6 +150,113 @@
   footer a{color:inherit}
   .linkbtn{background:none;border:0;padding:0;color:inherit;text-decoration:underline;font-size:inherit;cursor:pointer}
 
+  /* ---------- ad slot ---------- */
+  .adslot{
+    position:relative;margin:14px 14px 0;padding:16px 16px 14px;border-radius:var(--r);
+    background:repeating-linear-gradient(-45deg,#fff8e6 0 14px,#fff3d6 14px 28px);
+    border:2px dashed var(--gold);text-align:center;
+  }
+  .ad-tag{position:absolute;top:8px;left:10px;font-size:11px;font-weight:800;color:#8a6a24;border:1px solid #d9b56a;border-radius:4px;padding:0 5px;background:#fffdf5}
+  .ad-title{display:block;font-size:18px;letter-spacing:-.03em;color:#5a3f0b;margin-top:4px}
+  .ad-sub{margin:6px 0 10px;font-size:13.5px;color:#6d5525}
+  .ad-btn{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:0 16px;border-radius:999px;background:#5a3f0b;color:#fff3d6;font-weight:800;font-size:14px;text-decoration:none}
+  .ad-pending{display:inline-block;font-size:12.5px;color:#8a6a24;background:#fffdf5;border:1px solid #ecd49c;border-radius:999px;padding:5px 12px}
+
+  /* ---------- tabbar ---------- */
+  .tabbar{
+    position:fixed;left:0;right:0;bottom:0;z-index:1500;display:flex;justify-content:center;
+    background:rgba(255,253,248,.96);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    border-top:1px solid var(--line);padding:6px 8px calc(6px + var(--sb));
+  }
+  .tabbar a{flex:1;max-width:173px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;
+    color:var(--muted);text-decoration:none;font-size:12px;font-weight:700;border-radius:12px}
+  .tabbar a svg{width:23px;height:23px}
+  .tabbar a[aria-current="page"]{color:var(--green);background:#ece5d3}
+
+  /* ---------- age gate ---------- */
+  .agegate{position:fixed;inset:0;z-index:3000;background:linear-gradient(165deg,#0f4433,#072419);display:flex;align-items:center;justify-content:center;padding:24px}
+  .agebox{background:var(--paper);border-radius:22px;padding:24px 20px;max-width:360px;width:100%;text-align:center;display:grid;gap:10px}
+  .agebox .mark{width:52px;height:52px;margin:0 auto}
+  .agebox h2{margin:4px 0 0;font-size:21px}
+  .agebox p{margin:0 0 6px;color:var(--muted);font-size:14px}
+  .agebox .btn{width:100%}
+  .ageno{color:var(--no)!important;font-weight:700}
+
+  /* ---------- feature common ---------- */
+  .fx-h{font-size:21px;margin:4px 2px 2px;letter-spacing:-.03em}
+  .fx-sub{margin:0 2px 14px;color:var(--muted);font-size:14px}
+  .fx-card{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:12px}
+  .fx-card h3{margin:0 0 8px;font-size:17px;letter-spacing:-.02em}
+  .fx-steps{margin:0;padding-left:20px;font-size:14px;color:#3a443e;display:grid;gap:4px}
+  .fx-field{display:grid;gap:6px;margin-top:12px;font-size:14px;font-weight:700}
+  .fx-field input[type=text]{height:46px;border-radius:12px;border:1px solid var(--line);background:#fff;padding:0 12px;font:inherit;font-size:16px;font-weight:400}
+  .fx-check{display:flex;gap:8px;align-items:flex-start;font-size:13.5px;color:#3a443e;margin-top:12px}
+  .fx-check input{width:18px;height:18px;margin-top:1px;accent-color:var(--green);flex:none}
+  .fx-photo{display:flex;align-items:center;gap:12px;margin-top:12px}
+  .fx-photo img{width:72px;height:72px;object-fit:cover;border-radius:12px;border:1px solid var(--line)}
+  .fx-photo label{flex:1}
+  .fx-photo input{display:none}
+  .fx-btn{width:100%;margin-top:14px}
+  .btn[disabled]{opacity:.45;cursor:not-allowed}
+  .fx-note{font-size:12.5px;color:var(--muted);margin:10px 0 0}
+  .fx-big{font-size:44px;font-weight:900;letter-spacing:-.04em;line-height:1.1;color:var(--green)}
+  .fx-center{text-align:center}
+  .fx-code{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:12px 0}
+  .fx-code span{background:var(--green);color:#ffd98d;font-weight:900;font-size:22px;padding:10px 14px;border-radius:12px}
+  .fx-opts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+  .fx-opts button{min-height:54px;border-radius:12px;border:1px solid var(--line);background:#fff;font-size:17px;font-weight:800;color:var(--ink);cursor:pointer}
+  .fx-opts button.ok{background:var(--yes-bg);border-color:#9fd2b1;color:var(--yes)}
+  .fx-opts button.bad{background:var(--no-bg);border-color:#efb495;color:var(--no)}
+  .fx-digits{font-size:46px;font-weight:900;letter-spacing:.18em;text-align:center;color:var(--green);margin:18px 0;font-variant-numeric:tabular-nums;min-height:60px}
+  .fx-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+  .fx-pad button{min-height:56px;border-radius:14px;border:1px solid var(--line);background:#fff;font-size:22px;font-weight:800;color:var(--ink);cursor:pointer}
+  .fx-pad button.fn{font-size:15px;background:#ece5d3}
+  .fx-entry{font-size:32px;font-weight:900;letter-spacing:.15em;text-align:center;min-height:44px;color:var(--ink);font-variant-numeric:tabular-nums}
+  .fx-meter{height:14px;border-radius:999px;background:#e8e1cf;overflow:hidden;margin:10px 0 4px}
+  .fx-meter i{display:block;height:100%;background:linear-gradient(90deg,#1d7f46,#c99a3b,#b5400f);border-radius:999px}
+  .fx-badge{display:inline-block;background:#fff3d6;border:1px solid #ecd49c;color:#5a3f0b;font-weight:800;border-radius:999px;padding:6px 14px;margin-top:8px}
+  .fx-tabs{display:flex;gap:6px;margin-bottom:10px}
+  .fx-rank{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+  .fx-rank li{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:14px}
+  .fx-rank .n{width:26px;font-weight:900;color:var(--gold);text-align:center}
+  .fx-rank .who{flex:1;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .fx-rank .sc{font-weight:900;color:var(--green);font-variant-numeric:tabular-nums}
+  .fx-rank .me{border-color:var(--gold);background:#fffaf0}
+  .fx-empty{color:var(--muted);font-size:14px;text-align:center;padding:14px}
+  .fx-tips{margin:10px 0 0;padding-left:18px;font-size:13px;color:#3a443e}
+  .fx-link{background:none;border:0;color:var(--muted);text-decoration:underline;font-size:13px;cursor:pointer;margin-top:10px}
+  .g-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .g-card{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:16px 14px;text-align:left;cursor:pointer;color:var(--ink);min-height:118px;display:flex;flex-direction:column;gap:6px}
+  .g-card b{font-size:16px;letter-spacing:-.02em}
+  .g-card small{color:var(--muted);font-size:12.5px;line-height:1.4}
+  .g-card .ic{font-size:26px;line-height:1}
+  .g-top{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .g-top button{background:#ece5d3;border:0;border-radius:10px;min-height:38px;padding:0 12px;font-weight:700;cursor:pointer;color:var(--ink)}
+  .g-top h3{margin:0;font-size:18px}
+  .g-q{font-size:22px;font-weight:800;line-height:1.45;letter-spacing:-.02em;margin:8px 0 4px;min-height:96px}
+  .g-ox{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+  .g-ox button{min-height:84px;border-radius:16px;border:0;font-size:40px;font-weight:900;color:#fff;cursor:pointer}
+  .g-ox .o{background:#1d6fb8} .g-ox .x{background:#c2410c}
+  .g-ans{border-radius:14px;padding:12px 14px;margin-top:12px;font-size:15px}
+  .g-ans.ok{background:var(--yes-bg);color:#14532d} .g-ans.bad{background:var(--no-bg);color:#7c2d12}
+  .g-pen{margin-top:12px;background:#13241d;color:#fff;border-radius:14px;padding:14px;text-align:center}
+  .g-pen small{display:block;color:#b8c9be;font-size:12px}
+  .g-pen b{font-size:20px;color:#ffd98d}
+  .g-bomb{font-size:96px;text-align:center;margin:20px 0 6px;line-height:1}
+  .g-bomb.tick{animation:tick .6s ease-in-out infinite}
+  @keyframes tick{50%{transform:scale(1.12) rotate(-6deg)}}
+  .g-bomb.boom{animation:boom .5s ease-out}
+  @keyframes boom{0%{transform:scale(.6)}60%{transform:scale(1.35)}100%{transform:scale(1)}}
+  .g-cat{text-align:center;font-size:18px;font-weight:800}
+  .g-range{text-align:center;color:var(--muted);font-size:14px}
+  .g-updown{text-align:center;font-size:44px;font-weight:900;margin:14px 0;min-height:56px}
+  .g-wheel-wrap{position:relative;width:260px;height:260px;margin:10px auto}
+  .g-wheel{width:100%;height:100%;border-radius:50%;transition:transform 3.2s cubic-bezier(.17,.67,.12,1);border:6px solid #13241d}
+  .g-pin{position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:13px solid transparent;border-right:13px solid transparent;border-top:24px solid #13241d;z-index:2}
+  .g-row{display:flex;gap:8px;margin-top:10px}
+  .g-row input{flex:1;min-width:0;height:46px;border-radius:12px;border:1px solid var(--line);background:#fff;padding:0 12px;font:inherit;font-size:16px}
+  .g-foot{font-size:12px;color:var(--muted);text-align:center;margin-top:14px}
+
   /* ---------- sheet / toast ---------- */
   .scrim{position:fixed;inset:0;background:rgba(8,20,15,.5);z-index:2000;display:flex;align-items:flex-end;justify-content:center;animation:fade .15s}
   .sheet{
@@ -193,17 +300,26 @@
         <circle cx="24" cy="24" r="2.4" fill="#c99a3b"/>
       </svg>
       <div>
-        <h1>품절템 레이더</h1>
-        <p>품절 대란템, 근처 어디서 파는지 찾기</p>
+        <h1>캪틴큐 레이더</h1>
+        <p>파는 곳 찾고, 기억삭제율 재고, 같이 놀고</p>
       </div>
     </div>
     <button class="tip" id="tipCopy" type="button">
-      <span><small>지금 뜨는 품절템 · 앱 검색어 (ㅍ받침!)</small><b id="productWord">캪틴큐</b></span>
+      <span><small>편의점 앱 재고 검색어 (ㅍ받침!)</small><b id="productWord">캪틴큐</b></span>
       <span class="pill">검색어 복사</span>
     </button>
   </header>
 
+  <aside class="adslot" id="adSlot" aria-label="광고 자리">
+    <span class="ad-tag">AD</span>
+    <strong class="ad-title">여기는 롯데칠성 광고자리입니다</strong>
+    <p class="ad-sub">롯데칠성음료 마케팅 담당자분은 연락주세요.<br>캪틴큐 찾는 사람들이 매일 모이는 곳이에요.</p>
+    <a class="ad-btn" id="adContact" hidden>광고 문의 메일 보내기</a>
+    <span class="ad-pending" id="adPending">광고 문의 메일 주소 곧 공개</span>
+  </aside>
+
   <main>
+    <section class="tab" id="tab-find" aria-label="매장 찾기">
     <section class="card" aria-label="위치 설정">
       <button class="btn primary" id="btnLocate" type="button">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="7"/></svg>
@@ -250,17 +366,49 @@
         <a href="https://www.koreancenter.or.kr/news/articleView.html?idxno=1432581" target="_blank" rel="noopener">연합뉴스</a>
       </p>
     </details>
+    </section>
+
+    <section class="tab" id="tab-memory" aria-label="기억삭제 측정기" hidden>
+      <div id="memoryApp"></div>
+    </section>
+
+    <section class="tab" id="tab-games" aria-label="술게임" hidden>
+      <div id="gamesApp"></div>
+    </section>
   </main>
 
   <footer>
-    품절템 레이더는 재고 수량을 직접 알 수 없어요. 판매 체인 매장을 거리순으로 보여 주고, 재고는 각 편의점 앱으로 연결해요.
+    캪틴큐 레이더는 재고 수량을 직접 알 수 없어요. 판매 체인 매장을 거리순으로 보여 주고, 재고는 각 편의점 앱으로 연결해요.
     ‘있었어요/없었어요’ 메모는 이 기기에만 저장돼요. 주류는 만 19세 이상만 살 수 있으니 신분증을 챙기세요.<br>
-    품절템 레이더는 롯데칠성음료 및 각 편의점·마트와 관계없는 개인 서비스예요. 상품명과 상표는 각 소유자의 것이에요.<br>
+    캪틴큐 레이더는 롯데칠성음료 및 각 편의점·마트와 관계없는 팬 메이드 개인 서비스예요. 과음은 건강을 해치고, 음주운전은 절대 안 돼요. 상품명과 상표는 각 소유자의 것이에요.<br>
     <a href="privacy.html" target="_blank" rel="noopener">개인정보처리방침</a> ·
     <button type="button" class="linkbtn" id="trackToggle">이용 통계 끄기</button> ·
     <a href="https://github.com/erantis1126-lgtm/captainQ/issues" target="_blank" rel="noopener">문의</a> ·
     지도·매장 데이터 © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap 기여자</a>
   </footer>
+</div>
+
+<nav class="tabbar" id="tabbar" aria-label="메뉴">
+  <a href="#find" data-tab="find" aria-current="page">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+    <span>매장 찾기</span></a>
+  <a href="#memory" data-tab="memory">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4a3 3 0 0 0-3 3 3 3 0 0 0-2 5 3 3 0 0 0 2 5 3 3 0 0 0 3 3h1V4z"/><path d="M15 4a3 3 0 0 1 3 3 3 3 0 0 1 2 5 3 3 0 0 1-2 5 3 3 0 0 1-3 3h-1V4z"/></svg>
+    <span>기억삭제</span></a>
+  <a href="#games" data-tab="games">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.2" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg>
+    <span>술게임</span></a>
+</nav>
+
+<div class="agegate" id="ageGate" hidden role="dialog" aria-modal="true" aria-labelledby="ageTitle">
+  <div class="agebox">
+    <svg class="mark" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="21" fill="none" stroke="#c99a3b" stroke-width="2.2"/><circle cx="24" cy="24" r="13.5" fill="none" stroke="#c99a3b" stroke-width="1.6" opacity=".7"/><circle cx="33" cy="15" r="3" fill="#ffd98d"/><circle cx="24" cy="24" r="2.4" fill="#c99a3b"/></svg>
+    <h2 id="ageTitle">만 19세 이상인가요?</h2>
+    <p>캪틴큐 레이더는 주류 정보와 술자리 게임을 담고 있어서 만 19세 이상만 이용할 수 있어요.</p>
+    <button class="btn primary" type="button" id="ageYes">네, 만 19세 이상이에요</button>
+    <button class="btn ghost" type="button" id="ageNo">아니요</button>
+    <p class="ageno" id="ageNoMsg" hidden>만 19세 이상이 되면 다시 만나요!</p>
+  </div>
 </div>
 
 <div class="scrim" id="scrim" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
@@ -283,6 +431,8 @@
   // Firebase/GA4 측정 ID(G-로 시작)를 넣으면 수집을 시작해요. 비워 두면 아무것도 보내지 않아요.
   // 좌표는 보내지 않고, 지역은 '서울 마포구'처럼 구 단위로만 보내요.
   const GA_ID = '';
+  // 광고 문의 메일 주소. 넣으면 광고 자리에 '광고 문의 메일 보내기' 버튼이 나타나요.
+  const AD_CONTACT = '';
   const PLATFORM = (window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform()) || 'web';
   let noTrack = false;
   try{ noTrack = localStorage.getItem('cq.noTrack') === '1'; }catch{}
@@ -897,7 +1047,67 @@
   }
   store.set('memo', state.memo);
   renderRadius();
+
+  // ---------- 광고 자리 ----------
+  if (AD_CONTACT){
+    const a = $('#adContact');
+    a.href = 'mailto:' + AD_CONTACT + '?subject=' + encodeURIComponent('[캪틴큐 레이더] 광고 문의');
+    a.hidden = false;
+    $('#adPending').textContent = AD_CONTACT;
+    a.addEventListener('click', () => track('ad_contact_click'));
+  }
+  try{
+    const io = new IntersectionObserver(es => {
+      if (es.some(e => e.isIntersecting)){ track('ad_slot_impression'); io.disconnect(); }
+    }, { threshold: .6 });
+    io.observe($('#adSlot'));
+  }catch{}
+
+  // ---------- 탭 ----------
+  const TABS = ['find', 'memory', 'games'];
+  const tabHooks = {};
+  let currentTab = '';
+  function showTab(name, fromHash){
+    if (!TABS.includes(name)) name = 'find';
+    if (name === currentTab) return;
+    currentTab = name;
+    for (const t of TABS) $('#tab-' + t).hidden = t !== name;
+    document.querySelectorAll('#tabbar a').forEach(a => {
+      if (a.dataset.tab === name) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+    });
+    if (!fromHash){ try{ history.replaceState(history.state, '', '#' + name); }catch{} }
+    window.scrollTo(0, 0);
+    if (name === 'find' && map) setTimeout(() => { try{ map.invalidateSize(); }catch{} }, 50);
+    (tabHooks[name] || []).forEach(fn => { try{ fn(); }catch{} });
+    track('tab_view', { tab: name });
+  }
+  $('#tabbar').addEventListener('click', e => {
+    const a = e.target.closest('a[data-tab]'); if (!a) return;
+    e.preventDefault(); showTab(a.dataset.tab);
+  });
+  window.addEventListener('hashchange', () => {
+    const h = location.hash.replace('#', '');
+    if (TABS.includes(h)) showTab(h, true);
+  });
+
+  // ---------- 19세 확인 ----------
+  if (!store.get('adult', false)){
+    $('#ageGate').hidden = false;
+    $('#ageYes').addEventListener('click', () => { store.set('adult', true); $('#ageGate').hidden = true; track('age_confirm'); });
+    $('#ageNo').addEventListener('click', () => { $('#ageNoMsg').hidden = false; $('#ageYes').hidden = true; $('#ageNo').hidden = true; });
+  }
+
+  // 다른 화면(기억삭제·술게임)이 함께 쓰는 도구
+  window.CQ = {
+    $, esc, toast, track, store, PRODUCT, PLATFORM, openSheet, closeSheet, copyWord,
+    onTab(name, fn){ (tabHooks[name] = tabHooks[name] || []).push(fn); },
+    showTab,
+  };
+  // 기억삭제·술게임 스크립트가 붙은 뒤 첫 탭을 보여 준다.
+  window.addEventListener('DOMContentLoaded', () => showTab(location.hash.replace('#', '') || 'find', true));
 })();
 </script>
+<script src="memory.js"></script>
+<script src="games.js"></script>
 </body>
 </html>

@@ -1,0 +1,24 @@
+rules_version = '2';
+// 캪틴큐 기억삭제 측정기 전체 랭킹용 Firestore 보안 규칙.
+// 누구나 랭킹을 읽고 새 기록을 올릴 수 있지만, 정해진 형식만 허용하고 수정·삭제는 막는다.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /memoryScores/{id} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasOnly(['nick', 'score', 'span', 'secret', 'ts', 'platform'])
+        && request.resource.data.nick is string
+        && request.resource.data.nick.size() > 0 && request.resource.data.nick.size() <= 12
+        && request.resource.data.score is int && request.resource.data.score >= 0 && request.resource.data.score <= 100
+        && request.resource.data.span is int && request.resource.data.span >= 0 && request.resource.data.span <= 12
+        && request.resource.data.secret is int && request.resource.data.secret >= 0 && request.resource.data.secret <= 3
+        && request.resource.data.score == request.resource.data.secret * 20
+             + (request.resource.data.span >= 7 ? 40
+                : (request.resource.data.span >= 3 ? (request.resource.data.span - 2) * 8 : 0))
+        && request.resource.data.ts is timestamp
+        && request.resource.data.ts > request.time - duration.value(10, 'm')
+        && request.resource.data.ts < request.time + duration.value(10, 'm')
+        && request.resource.data.platform is string && request.resource.data.platform.size() <= 10;
+      allow update, delete: if false;
+    }
+  }
+}
