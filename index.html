@@ -570,9 +570,12 @@
       const short = r => r.display_name.split(',').slice(0, 3).map(s => s.trim()).join(', ');
       const first = list[0];
       setCenter(+first.lat, +first.lon, first.name || q, false);
-      if (list.length > 1){
-        picks.innerHTML = '<span>다른 곳인가요?</span>' + list.slice(1).map((r, i) =>
-          `<button class="chip" type="button" data-i="${i+1}">${esc(short(r))}</button>`).join('');
+      const seen = new Set([short(first)]);
+      const alts = [];
+      list.slice(1).forEach((r, i) => { const s = short(r); if (!seen.has(s)){ seen.add(s); alts.push([i + 1, s]); } });
+      if (alts.length){
+        picks.innerHTML = '<span>다른 곳인가요?</span>' + alts.map(([i, s]) =>
+          `<button class="chip" type="button" data-i="${i}">${esc(s)}</button>`).join('');
         picks.onclick = e => {
           const btn = e.target.closest('[data-i]'); if (!btn) return;
           const r = list[+btn.dataset.i];
