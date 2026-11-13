@@ -4,8 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0c3a2c">
-<meta name="description" content="내 주변 캪틴큐 판매 매장을 거리순으로 찾고, 편의점 앱에서 재고를 확인하세요.">
-<title>캪틴큐 레이더 — 내 주변 판매 매장</title>
+<meta name="description" content="캪틴큐 같은 품절 대란템, 내 주변 어느 편의점·마트에서 파는지 거리순으로 찾고 편의점 앱 재고 조회로 바로 연결해요.">
+<title>품절템 레이더 — 내 주변 판매 매장 찾기</title>
+<link rel="icon" type="image/png" href="assets/icon-512.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
 <style>
@@ -146,6 +148,7 @@
   .src a{color:inherit}
   footer{font-size:12px;color:var(--muted);padding:16px 18px 0;line-height:1.65}
   footer a{color:inherit}
+  .linkbtn{background:none;border:0;padding:0;color:inherit;text-decoration:underline;font-size:inherit;cursor:pointer}
 
   /* ---------- sheet / toast ---------- */
   .scrim{position:fixed;inset:0;background:rgba(8,20,15,.5);z-index:2000;display:flex;align-items:flex-end;justify-content:center;animation:fade .15s}
@@ -181,20 +184,22 @@
   <header class="hero">
     <div class="brandrow">
       <svg class="mark" viewBox="0 0 48 48" aria-hidden="true">
-        <g fill="none" stroke="#c99a3b" stroke-width="2.4" stroke-linecap="round">
-          <circle cx="24" cy="24" r="12"/>
-          <circle cx="24" cy="24" r="4" fill="#c99a3b"/>
-          <path d="M24 4v8M24 36v8M4 24h8M36 24h8M9.9 9.9l5.7 5.7M32.4 32.4l5.7 5.7M38.1 9.9l-5.7 5.7M15.6 32.4l-5.7 5.7"/>
-        </g>
+        <defs><linearGradient id="sweep" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e2b65a" stop-opacity=".9"/><stop offset="1" stop-color="#e2b65a" stop-opacity="0"/></linearGradient></defs>
+        <circle cx="24" cy="24" r="21" fill="none" stroke="#c99a3b" stroke-width="2.2"/>
+        <circle cx="24" cy="24" r="13.5" fill="none" stroke="#c99a3b" stroke-width="1.6" opacity=".7"/>
+        <circle cx="24" cy="24" r="6" fill="none" stroke="#c99a3b" stroke-width="1.4" opacity=".5"/>
+        <path d="M24 24 L24 3 A21 21 0 0 1 42.2 13.5 Z" fill="url(#sweep)"/>
+        <circle cx="33" cy="15" r="3" fill="#ffd98d"/>
+        <circle cx="24" cy="24" r="2.4" fill="#c99a3b"/>
       </svg>
       <div>
-        <h1>캪틴큐 레이더</h1>
-        <p>주변 판매 매장 찾고, 앱에서 재고 확인</p>
+        <h1>품절템 레이더</h1>
+        <p>품절 대란템, 근처 어디서 파는지 찾기</p>
       </div>
     </div>
     <button class="tip" id="tipCopy" type="button">
-      <span><small>편의점 앱 검색어 (ㅍ받침!)</small><b>캪틴큐</b></span>
-      <span class="pill">복사</span>
+      <span><small>지금 뜨는 품절템 · 앱 검색어 (ㅍ받침!)</small><b id="productWord">캪틴큐</b></span>
+      <span class="pill">검색어 복사</span>
     </button>
   </header>
 
@@ -248,8 +253,12 @@
   </main>
 
   <footer>
-    이 페이지는 재고 수량을 직접 알 수 없어요. 판매 체인 매장을 거리순으로 보여 주고, 재고는 각 편의점 앱으로 연결해요.
+    품절템 레이더는 재고 수량을 직접 알 수 없어요. 판매 체인 매장을 거리순으로 보여 주고, 재고는 각 편의점 앱으로 연결해요.
     ‘있었어요/없었어요’ 메모는 이 기기에만 저장돼요. 주류는 만 19세 이상만 살 수 있으니 신분증을 챙기세요.<br>
+    품절템 레이더는 롯데칠성음료 및 각 편의점·마트와 관계없는 개인 서비스예요. 상품명과 상표는 각 소유자의 것이에요.<br>
+    <a href="privacy.html" target="_blank" rel="noopener">개인정보처리방침</a> ·
+    <button type="button" class="linkbtn" id="trackToggle">이용 통계 끄기</button> ·
+    <a href="https://github.com/erantis1126-lgtm/captainQ/issues" target="_blank" rel="noopener">문의</a> ·
     지도·매장 데이터 © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap 기여자</a>
   </footer>
 </div>
@@ -263,7 +272,37 @@
 (() => {
   'use strict';
 
-  const WORD = '캪틴큐';
+  // 지금 소개하는 품절템. 다른 상품으로 바꾸거나 늘릴 때 여기만 고치면 돼요.
+  const PRODUCT = {
+    id: 'captainq', name: '캪틴큐', word: '캪틴큐', misspell: '캡틴큐',
+    askLine: '“롯데칠성 <b>캪틴큐</b> 360mL 들어왔나요?”라고 물어보세요. 보물상자 한정판은 따로 물어봐야 해요.',
+  };
+  const WORD = PRODUCT.word;
+
+  // ---------- 방문 분석 (Google Analytics 4) ----------
+  // Firebase/GA4 측정 ID(G-로 시작)를 넣으면 수집을 시작해요. 비워 두면 아무것도 보내지 않아요.
+  // 좌표는 보내지 않고, 지역은 '서울 마포구'처럼 구 단위로만 보내요.
+  const GA_ID = '';
+  const PLATFORM = (window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform()) || 'web';
+  let noTrack = false;
+  try{ noTrack = localStorage.getItem('cq.noTrack') === '1'; }catch{}
+  if (GA_ID && noTrack) window['ga-disable-' + GA_ID] = true;
+  if (GA_ID && !noTrack){
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function(){ window.dataLayer.push(arguments); };
+    window.gtag('js', new Date());
+    window.gtag('config', GA_ID, { app_platform: PLATFORM, product: PRODUCT.id });
+    const gs = document.createElement('script');
+    gs.async = true; gs.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(GA_ID);
+    document.head.appendChild(gs);
+  }
+  function track(name, params){
+    try{
+      if (noTrack) return;
+      if (GA_ID && window.gtag) window.gtag('event', name, { product: PRODUCT.id, app_platform: PLATFORM, ...(params || {}) });
+      if (window.__track) window.__track(name, params);   // 테스트용 훅
+    }catch{}
+  }
   const RADII = [1000, 3000, 5000];
   const PAGE = 40;
 
@@ -304,7 +343,7 @@
   const state = {
     center:null, label:'', radius: RADII.includes(store.get('radius', 1000)) ? store.get('radius', 1000) : 1000,
     stores:[], filter:'all', hideNo: !!store.get('hideNo', false), memo: store.get('memo', {}) || {}, token:0,
-    limit: PAGE,
+    limit: PAGE, region:'', regionP: Promise.resolve(''), method:'',
   };
 
   const $ = s => document.querySelector(s);
@@ -512,19 +551,25 @@
       $('#results').hidden = false;
       $('#btnLocateText').textContent = '현재 위치로 다시 찾기';
       render();
+      const region = await Promise.race([state.regionP, new Promise(r => setTimeout(() => r(''), 4000))]).catch(() => '');
+      if (my !== state.token) return;
+      state.region = region || '';
+      track('store_search', { method: state.method, radius_km: state.radius / 1000, result_count: state.stores.length, region: state.region });
     }catch(e){
       if (my !== state.token) return;
       setStatus('지도 서버가 지금 너무 붐벼서 매장을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.', 'err');
       $('#retryBtn').hidden = false;
+      track('search_error', { stage: 'stores' });
     }
   }
 
-  function setCenter(lat, lon, label, reverse){
+  function setCenter(lat, lon, label, opts = {}){
     state.center = { lat, lon };
     state.label = label;
+    state.method = opts.method || 'address';
     $('#resTitle').textContent = `${label} 주변`;
+    state.regionP = opts.reverse ? reverseLabel(lat, lon) : Promise.resolve(opts.region || '');
     search();
-    if (reverse) reverseLabel(lat, lon);
   }
 
   async function reverseLabel(lat, lon){
@@ -536,7 +581,15 @@
         state.label = `${name}(현재 위치)`;
         $('#resTitle').textContent = `${name} 주변`;
       }
-    }catch{}
+      return regionOf(a);
+    }catch{ return ''; }
+  }
+
+  function regionOf(a){
+    if (!a) return '';
+    const top = a.city || a.province || a.state || '';
+    const mid = a.borough || a.city_district || a.county || a.town || '';
+    return [top, mid].filter(Boolean).join(' ').trim();
   }
 
   function locate(){
@@ -549,12 +602,13 @@
     }
     setStatus('현재 위치 확인 중…', 'busy');
     navigator.geolocation.getCurrentPosition(
-      p => setCenter(p.coords.latitude, p.coords.longitude, '현재 위치', true),
+      p => setCenter(p.coords.latitude, p.coords.longitude, '현재 위치', { reverse:true, method:'gps' }),
       err => {
         const m = err.code === 1 ? '위치 권한이 꺼져 있어요. 브라우저 설정에서 허용하거나 동·역 이름으로 찾아보세요.'
               : err.code === 3 ? '위치 확인이 오래 걸리고 있어요. 다시 누르거나 동·역 이름으로 찾아보세요.'
               : '위치를 확인하지 못했어요. 동·역 이름으로 찾아보세요.';
         setStatus(m, 'err');
+        track('search_error', { stage: 'gps', code: err.code });
       },
       { enableHighAccuracy:true, timeout:15000, maximumAge:60000 }
     );
@@ -565,11 +619,11 @@
     picks.hidden = true;
     setStatus(`‘${q}’ 위치 찾는 중…`, 'busy');
     try{
-      const list = await fetchJSON(`${NOMINATIM}/search?format=jsonv2&countrycodes=kr&accept-language=ko&limit=5&q=${encodeURIComponent(q)}`, {}, 12000);
-      if (!list.length){ return setStatus(`‘${q}’을(를) 찾지 못했어요. ‘합정역’, ‘서교동’처럼 입력해 보세요.`, 'err'); }
+      const list = await fetchJSON(`${NOMINATIM}/search?format=jsonv2&countrycodes=kr&accept-language=ko&addressdetails=1&limit=5&q=${encodeURIComponent(q)}`, {}, 12000);
+      if (!list.length){ track('search_error', { stage: 'geocode_empty' }); return setStatus(`‘${q}’을(를) 찾지 못했어요. ‘합정역’, ‘서교동’처럼 입력해 보세요.`, 'err'); }
       const short = r => r.display_name.split(',').slice(0, 3).map(s => s.trim()).join(', ');
       const first = list[0];
-      setCenter(+first.lat, +first.lon, first.name || q, false);
+      setCenter(+first.lat, +first.lon, first.name || q, { method:'address', region: regionOf(first.address) });
       const seen = new Set([short(first)]);
       const alts = [];
       list.slice(1).forEach((r, i) => { const s = short(r); if (!seen.has(s)){ seen.add(s); alts.push([i + 1, s]); } });
@@ -580,12 +634,13 @@
           const btn = e.target.closest('[data-i]'); if (!btn) return;
           const r = list[+btn.dataset.i];
           picks.hidden = true;
-          setCenter(+r.lat, +r.lon, r.name || short(r), false);
+          setCenter(+r.lat, +r.lon, r.name || short(r), { method:'address', region: regionOf(r.address) });
         };
         picks.hidden = false;
       }
     }catch{
       setStatus('위치 검색에 실패했어요. 잠시 후 다시 시도해 주세요.', 'err');
+      track('search_error', { stage: 'geocode' });
     }
   }
 
@@ -610,6 +665,7 @@
   function setRadius(r){
     if (r === state.radius) return;
     state.radius = r; store.set('radius', r); renderRadius();
+    track('radius_change', { radius_km: r / 1000 });
     if (state.center) search();
   }
 
@@ -635,8 +691,8 @@
     const m = state.memo[s.id];
     const b = s.b;
     const third = s.phone
-      ? `<a class="act" href="${esc(telHref(s.phone))}">${ICON.phone}전화</a>`
-      : `<a class="act" href="${esc(placeInfo(s))}" target="_blank" rel="noopener">${ICON.info}매장정보</a>`;
+      ? `<a class="act" data-ev="call_store" href="${esc(telHref(s.phone))}">${ICON.phone}전화</a>`
+      : `<a class="act" data-ev="store_info" href="${esc(placeInfo(s))}" target="_blank" rel="noopener">${ICON.info}매장정보</a>`;
     return `<li class="store${m?.s === 'no' ? ' is-no' : ''}" id="s-${s.id}" data-id="${s.id}">
       <div class="top">
         <span class="badge" style="--c:${b.c};--fg:${b.fg}">${b.label}</span>
@@ -648,7 +704,7 @@
       ${memoLine(m)}
       <div class="acts">
         <button class="act main" type="button" data-act="check">${ICON.box}재고 확인</button>
-        <a class="act" href="${esc(kakaoRoute(s))}" target="_blank" rel="noopener">${ICON.route}길찾기</a>
+        <a class="act" data-ev="directions" href="${esc(kakaoRoute(s))}" target="_blank" rel="noopener">${ICON.route}길찾기</a>
         ${third}
       </div>
       <div class="seg" role="group" aria-label="내 확인 메모">
@@ -725,13 +781,18 @@
     $('#sheet').innerHTML = '<div class="grab"></div>' + html;
     $('#scrim').hidden = false;
     document.body.style.overflow = 'hidden';
+    try{ if (!(history.state && history.state.sheet)) history.pushState({ sheet: 1 }, ''); }catch{}
   }
-  function closeSheet(){
+  function closeSheet(fromPop){
+    if ($('#scrim').hidden) return;
     $('#scrim').hidden = true;
     document.body.style.overflow = '';
+    try{ if (!fromPop && history.state && history.state.sheet) history.back(); }catch{}
   }
+  window.addEventListener('popstate', () => closeSheet(true));
 
   function openCheck(s){
+    track('check_stock', { brand: s.b.id, chain_kind: s.b.kind, region: state.region });
     const b = s.b;
     if (b.kind === 'cvs'){
       copyWord();
@@ -741,13 +802,13 @@
         <h3>${b.appShow}에서 재고 확인</h3>
         <p class="sub">${esc(s.name)} · ${fmtDist(s.d)}</p>
         <ol class="steps">
-          <li><span>검색어 <b>${WORD}</b>를 복사했어요. ‘캡틴큐’로 검색하면 안 나올 수 있어요.</span></li>
+          <li><span>검색어 <b>${WORD}</b>를 복사했어요. ‘${PRODUCT.misspell}’로 검색하면 안 나올 수 있어요.</span></li>
           <li><span><b>${b.appShow}</b> 앱의 상품·재고 검색에 붙여넣고, 지도에서 <b>${esc(s.name)}</b>을(를) 찾아보세요.</span></li>
           <li><span>재고가 보여도 전산 반영에 시차가 있으니, 가기 전에 전화로 한 번 더 확인하세요.</span></li>
         </ol>
         <div class="btns">
-          <a class="btn primary" href="${esc(storeHref)}"${ext}>${b.appShow} 열기 / 설치</a>
-          <a class="btn ghost" href="${esc(placeInfo(s))}" target="_blank" rel="noopener">매장 위치·전화번호 보기 (카카오맵)</a>
+          <a class="btn primary" data-ev="open_chain_app" data-brand="${b.id}" href="${esc(storeHref)}"${ext}>${b.appShow} 열기 / 설치</a>
+          <a class="btn ghost" data-ev="store_info" data-brand="${b.id}" href="${esc(placeInfo(s))}" target="_blank" rel="noopener">매장 위치·전화번호 보기 (카카오맵)</a>
           <button class="btn ghost" type="button" data-close>닫기</button>
         </div>`);
     } else {
@@ -756,19 +817,29 @@
         <p class="sub">${esc(s.name)} · ${fmtDist(s.d)}</p>
         <ol class="steps">
           <li><span>마트는 편의점처럼 앱 재고 조회가 안 될 수 있어서 <b>매장 전화</b>가 가장 확실해요.</span></li>
-          <li><span>“롯데칠성 <b>${WORD}</b> 360mL 들어왔나요?”라고 물어보세요. 보물상자 한정판은 따로 물어봐야 해요.</span></li>
+          <li><span>${PRODUCT.askLine}</span></li>
         </ol>
         <div class="btns">
-          ${s.phone ? `<a class="btn primary" href="${esc(telHref(s.phone))}">${ICON.phone}${esc(s.phone)} 전화</a>` : ''}
-          <a class="btn ${s.phone ? 'ghost' : 'primary'}" href="${esc(placeInfo(s))}" target="_blank" rel="noopener">카카오맵에서 매장 정보·전화번호</a>
+          ${s.phone ? `<a class="btn primary" data-ev="call_store" data-brand="${b.id}" href="${esc(telHref(s.phone))}">${ICON.phone}${esc(s.phone)} 전화</a>` : ''}
+          <a class="btn ${s.phone ? 'ghost' : 'primary'}" data-ev="store_info" data-brand="${b.id}" href="${esc(placeInfo(s))}" target="_blank" rel="noopener">카카오맵에서 매장 정보·전화번호</a>
           <button class="btn ghost" type="button" data-close>닫기</button>
         </div>`);
     }
   }
 
   // ---------- events ----------
-  $('#tipCopy').addEventListener('click', copyWord);
+  $('#tipCopy').addEventListener('click', () => { copyWord(); track('copy_keyword', { where: 'header' }); });
   $('#btnLocate').addEventListener('click', locate);
+  const syncTrackLabel = () => { $('#trackToggle').textContent = noTrack ? '이용 통계 켜기' : '이용 통계 끄기'; };
+  syncTrackLabel();
+  $('#trackToggle').addEventListener('click', () => {
+    if (!noTrack) track('analytics_opt_out');
+    noTrack = !noTrack;
+    try{ localStorage.setItem('cq.noTrack', noTrack ? '1' : '0'); }catch{}
+    if (GA_ID) window['ga-disable-' + GA_ID] = noTrack;
+    syncTrackLabel();
+    toast(noTrack ? '이용 통계 수집을 껐어요' : '이용 통계 수집을 켰어요');
+  });
   $('#retryBtn').addEventListener('click', () => search());
   $('#addrForm').addEventListener('submit', e => {
     e.preventDefault();
@@ -780,14 +851,21 @@
   $('#filters').addEventListener('click', e => {
     const b = e.target.closest('[data-f]'); if (!b) return;
     state.filter = b.dataset.f; state.limit = PAGE; render();
+    track('chain_filter', { brand: state.filter });
   });
   $('#hideNo').addEventListener('change', e => {
     state.hideNo = e.target.checked; store.set('hideNo', state.hideNo); render();
   });
   $('#list').addEventListener('click', e => {
+    const link = e.target.closest('a[data-ev]');
+    if (link){
+      const s = state.stores.find(x => x.id === link.closest('[data-id]')?.dataset.id);
+      track(link.dataset.ev, { brand: s?.b.id || '', region: state.region });
+      return;   // 링크 이동은 그대로
+    }
     const r = e.target.closest('[data-r]');
     if (r){ setRadius(+r.dataset.r); return; }
-    if (e.target.closest('[data-more]')){ state.limit += PAGE; render({ map:false }); return; }
+    if (e.target.closest('[data-more]')){ state.limit += PAGE; render({ map:false }); track('load_more'); return; }
     const btn = e.target.closest('[data-act]'); if (!btn) return;
     const li = btn.closest('[data-id]'); const s = state.stores.find(x => x.id === li.dataset.id);
     if (!s) return;
@@ -797,6 +875,7 @@
       if (cur === btn.dataset.s) delete state.memo[s.id];
       else state.memo[s.id] = { s: btn.dataset.s, t: Date.now() };
       store.set('memo', state.memo);
+      track('stock_memo', { brand: s.b.id, status: state.memo[s.id]?.s || 'clear', region: state.region });
       toast(state.memo[s.id] ? (btn.dataset.s === 'yes' ? '있었어요로 메모했어요' : '없었어요로 메모했어요') : '메모를 지웠어요');
       if (state.hideNo) render();
       else {
@@ -806,6 +885,8 @@
     }
   });
   $('#scrim').addEventListener('click', e => {
+    const link = e.target.closest('a[data-ev]');
+    if (link) track(link.dataset.ev, { brand: link.dataset.brand || '', region: state.region });
     if (e.target.id === 'scrim' || e.target.closest('[data-close]')) closeSheet();
   });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#scrim').hidden) closeSheet(); });

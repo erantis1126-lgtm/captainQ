@@ -1,0 +1,14 @@
+{
+  "appId": "io.github.erantis1126.soldoutradar",
+  "appName": "품절템 레이더",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "backgroundColor": "#0c3a2c"
+  },
+  "ios": {
+    "backgroundColor": "#0c3a2c"
+  }
+}
